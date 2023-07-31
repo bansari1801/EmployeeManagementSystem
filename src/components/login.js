@@ -30,7 +30,6 @@ const Login = () => {
     }
 
     if (email && password) {
-      console.log(email, password);
 
       const cognitoUser = new CognitoUser({
         Username: email,

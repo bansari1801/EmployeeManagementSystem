@@ -25,6 +25,7 @@ export default function Navbar() {
       cognitoUser.signOut();
       navigate('/');
       console.log('User signed out successfully.');
+      localStorage.removeItem("email")
     } catch (error) {
       console.error('Error signing out:', error);
     }

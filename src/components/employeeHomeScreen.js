@@ -24,7 +24,6 @@ const EmployeeHomeScreen = () => {
     fetch(`${backendUrl}/getEmployeeDetails`, requestOptions)
       .then((response) => response.json())
       .then((data) => {
-        console.log(data);
         setEmail(data.email);
         setFirstName(data.firstName);
         setLastName(data.lastName);

@@ -50,7 +50,6 @@ const Register = () => {
     }
 
     if (email && password && firstName && lastName && department) {
-      console.log(email, password);
       try {
         userPool.signUp(email, password, null, null, (err, result) => {
           if (err) {

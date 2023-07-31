@@ -25,7 +25,6 @@ const ForgotPassword = () => {
       setEmailError(true);
     }
     if (email) {
-      console.log(email);
       const userData = {
         Username: email,
         Pool: userPool,
