@@ -1,29 +1,21 @@
-import * as React from 'react';
+import DeleteIcon from '@mui/icons-material/Delete';
+import EditIcon from '@mui/icons-material/Edit';
+import { IconButton } from '@mui/material';
+import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import Navbar from './navbar';
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import { IconButton } from '@mui/material';
+import * as React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CognitoUser, CognitoUserPool } from 'amazon-cognito-identity-js';
+import Navbar from './navbar';
 
 export default function Home() {
   const [employees, setEmployees] = React.useState([]);
   const navigate = useNavigate();
   const backendUrl = process.env.REACT_APP_API_GATEWAY_URL;
-
-  const poolData = {
-    UserPoolId: process.env.REACT_APP_USER_POOL_ID,
-    ClientId: process.env.REACT_APP_APP_CLIENT_ID,
-  };
-
-  const userPool = new CognitoUserPool(poolData);
 
   const fetchAllEmployees = () => {
     const requestOptions = {
@@ -52,30 +44,16 @@ export default function Home() {
       body: JSON.stringify({ email: email }),
     };
 
-    const userData = {
-      Username: email,
-      Pool: userPool,
-    };
-
-    const cognitoUser = new CognitoUser(userData);
-
-    cognitoUser.deleteUser(function (err, result) {
-      if (err) {
+    fetch(`${backendUrl}/deleteEmployee`, requestOptions)
+      .then((response) => response.json())
+      .then((data) => {
+        alert(data.message);
+        fetchAllEmployees();
+      })
+      .catch((err) => {
         console.log(err);
-        alert('Error deleting user!');
-        return;
-      }
-      fetch(`${backendUrl}/deleteEmployee`, requestOptions)
-        .then((response) => response.json())
-        .then((data) => {
-          alert(data.message);
-          fetchAllEmployees();
-        })
-        .catch((err) => {
-          console.log(err);
-          alert(err);
-        });
-    });
+        alert(err);
+      });
   };
 
   const editEmployee = (email) => {
