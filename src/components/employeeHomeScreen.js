@@ -1,6 +1,6 @@
 import { Button, TextField } from '@mui/material';
 import React, { useState, useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import Navbar from './navbar';
 
 const EmployeeHomeScreen = () => {

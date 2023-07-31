@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TextField, Button, FormGroup, FormControlLabel, Checkbox } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
-import { Auth } from 'aws-amplify';
+import { CognitoUserPool } from 'amazon-cognito-identity-js';
 
 const Register = () => {
   const [email, setEmail] = useState('');
@@ -17,7 +17,12 @@ const Register = () => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   const backendUrl = process.env.REACT_APP_API_GATEWAY_URL;
-  
+
+  const userPool = new CognitoUserPool({
+    UserPoolId: process.env.REACT_APP_USER_POOL_ID,
+    ClientId: process.env.REACT_APP_APP_CLIENT_ID,
+  });
+
   const navigate = useNavigate();
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -47,25 +52,27 @@ const Register = () => {
     if (email && password && firstName && lastName && department) {
       console.log(email, password);
       try {
-        await Auth.signUp({
-          username: email,
-          password,
+        userPool.signUp(email, password, null, null, (err, result) => {
+          if (err) {
+            console.error('Error registering user:', err);
+            alert('Error registering user!');
+          }
+
+          const requestOptions = {
+            method: 'POST',
+            headers: { Accept: 'application/json' },
+            body: JSON.stringify({ email: email, password: password, firstName: firstName, lastName: lastName, department: department, isAdmin: isAdmin }),
+          };
+
+          fetch(`${backendUrl}/registerEmployee`, requestOptions)
+            .then((response) => response.json())
+            .then((data) => {
+              alert('Registration Successful!!');
+              navigate('/');
+            })
+            .catch((err) => console.log(err));
+          console.log('User registered successfully!');
         });
-
-        const requestOptions = {
-          method: 'POST',
-          headers: { Accept: 'application/json' },
-          body: JSON.stringify({ email: email, password: password, firstName: firstName, lastName: lastName, department: department, isAdmin: isAdmin }),
-        };
-
-        fetch(`${backendUrl}/registerEmployee`, requestOptions)
-          .then((response) => response.json())
-          .then((data) => {
-            alert('Registration Successful!!');
-            navigate('/');
-          })
-          .catch((err) => console.log(err));
-        console.log('User registered successfully!');
       } catch (error) {
         console.error('Error registering user:', error);
       }

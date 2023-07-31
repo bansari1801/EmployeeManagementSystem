@@ -11,13 +11,19 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { IconButton } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import { Auth } from 'aws-amplify';
+import { CognitoUser, CognitoUserPool } from 'amazon-cognito-identity-js';
 
 export default function Home() {
   const [employees, setEmployees] = React.useState([]);
   const navigate = useNavigate();
   const backendUrl = process.env.REACT_APP_API_GATEWAY_URL;
 
+  const poolData = {
+    UserPoolId: process.env.REACT_APP_USER_POOL_ID,
+    ClientId: process.env.REACT_APP_APP_CLIENT_ID,
+  };
+
+  const userPool = new CognitoUserPool(poolData);
 
   const fetchAllEmployees = () => {
     const requestOptions = {
@@ -39,23 +45,37 @@ export default function Home() {
     fetchAllEmployees();
   }, []);
 
-  const deleteEmployee = async(email) => {
+  const deleteEmployee = async (email) => {
     const requestOptions = {
       method: 'DELETE',
       headers: { Accept: 'application/json' },
       body: JSON.stringify({ email: email }),
     };
-    await Auth.deleteUser({ username: email });
-    fetch(`${backendUrl}/deleteEmployee`, requestOptions)
-      .then((response) => response.json())
-      .then((data) => {
-        alert(data.message);
-        fetchAllEmployees();
-      })
-      .catch((err) => {
+
+    const userData = {
+      Username: email,
+      Pool: userPool,
+    };
+
+    const cognitoUser = new CognitoUser(userData);
+
+    cognitoUser.deleteUser(function (err, result) {
+      if (err) {
         console.log(err);
-        alert(err);
-      });
+        alert('Error deleting user!');
+        return;
+      }
+      fetch(`${backendUrl}/deleteEmployee`, requestOptions)
+        .then((response) => response.json())
+        .then((data) => {
+          alert(data.message);
+          fetchAllEmployees();
+        })
+        .catch((err) => {
+          console.log(err);
+          alert(err);
+        });
+    });
   };
 
   const editEmployee = (email) => {

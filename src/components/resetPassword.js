@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { TextField, Button } from '@mui/material';
 import { Link, useNavigate } from 'react-router-dom';
-import { Auth } from 'aws-amplify';
+import { CognitoUser, CognitoUserPool } from 'amazon-cognito-identity-js';
 
 const ResetPassword = () => {
   const [password, setPassword] = useState('');
@@ -13,8 +13,20 @@ const ResetPassword = () => {
 
   const backendUrl = process.env.REACT_APP_API_GATEWAY_URL;
 
+  const userPool = new CognitoUserPool({
+    UserPoolId: process.env.REACT_APP_USER_POOL_ID,
+    ClientId: process.env.REACT_APP_APP_CLIENT_ID,
+  });
+
   const searchParams = new URLSearchParams(window.location.search);
   const email = searchParams.get('email');
+
+  const userData = {
+    Username: email,
+    Pool: userPool,
+  };
+
+  const cognitoUser = new CognitoUser(userData);
 
   const navigate = useNavigate();
 
@@ -42,21 +54,24 @@ const ResetPassword = () => {
       };
 
       try {
-        await Auth.forgotPasswordSubmit(
-          email,
-          verificationCode, 
-          password
-        );
-        fetch(`${backendUrl}/resetPassword`, requestOptions)
-          .then((response) => response.json())
-          .then((data) => {
-            alert(data.message);
-            if (data.status === '200') {
-              navigate('/');
-            }
-          });
+        cognitoUser.confirmPassword(verificationCode, password, {
+          onSuccess() {
+            fetch(`${backendUrl}/resetPassword`, requestOptions)
+              .then((response) => response.json())
+              .then((data) => {
+                alert(data.message);
+                if (data.status === '200') {
+                  navigate('/');
+                }
+              });
 
-        console.log('password changed successfully.');
+            console.log('password changed successfully.');
+          },
+          onFailure(err) {
+            console.log('errorrr', err);
+            alert('Issue while updating password!');
+          },
+        });
       } catch (error) {
         console.log('errorrr', error);
       }

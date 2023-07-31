@@ -1,15 +1,22 @@
 import React, { useState } from 'react';
 import { TextField, Button } from '@mui/material';
 import { Link } from 'react-router-dom';
-import { Auth } from 'aws-amplify';
+
+import { CognitoUserPool, CognitoUser } from 'amazon-cognito-identity-js';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
   const [emailError, setEmailError] = useState(false);
   const backendUrl = process.env.REACT_APP_API_GATEWAY_URL;
 
+  const poolData = {
+    UserPoolId: process.env.REACT_APP_USER_POOL_ID,
+    ClientId: process.env.REACT_APP_APP_CLIENT_ID,
+  };
 
-  const handleSubmit = async(event) => {
+  const userPool = new CognitoUserPool(poolData);
+
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     setEmailError(false);
@@ -19,20 +26,31 @@ const ForgotPassword = () => {
     }
     if (email) {
       console.log(email);
+      const userData = {
+        Username: email,
+        Pool: userPool,
+      };
+
+      const cognitoUser = new CognitoUser(userData);
       const requestOptions = {
         method: 'POST',
         headers: { Accept: 'application/json' },
         body: JSON.stringify({ email: email }),
       };
 
-      await Auth.forgotPassword(email);
-
-      fetch(`${backendUrl}/forgotPassword`, requestOptions)
-        .then((response) => response.json())
-        .then((data) => {
-          alert(data.message);
-        })
-        .catch((err) => console.log(err));
+      cognitoUser.forgotPassword({
+        onSuccess: function (data) {
+          fetch(`${backendUrl}/forgotPassword`, requestOptions)
+            .then((response) => response.json())
+            .then((data) => {
+              alert(data.message);
+            })
+            .catch((err) => console.log(err));
+        },
+        onFailure: function (err) {
+          alert(err.message || JSON.stringify(err));
+        },
+      });
     }
   };
 
